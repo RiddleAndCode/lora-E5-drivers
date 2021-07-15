@@ -20,16 +20,20 @@ static lora_status send_cmd_and_get_response(char *cmd, char *response, size_t l
 }
 
 static lora_status check_response(char *received_response, char *expected_response) {
+    lora_status status = OK;
     size_t response_len = strlen(expected_response);
     if (response_len == strlen(received_response)) {
         for (int i = 0; i < response_len; ++i) {
             if (expected_response[i] != 'x' && expected_response[i] != received_response[i]) {
-                return UNEXPECTED_RESPONSE;
+                status = UNEXPECTED_RESPONSE;
             }
 
         }
     }
-    return OK;
+    else{
+        status = UNEXPECTED_RESPONSE;
+    }
+    return status;
 }
 
 lora_status check_modem_connectivity() {
@@ -113,5 +117,70 @@ lora_status set_AppKey(char *AppKey) {
         return status;
     }
     return check_response(response_buffer, "+KEY: APPKEY xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+}
+
+
+lora_status set_EU_DR(){
+    lora_status status = ERROR;
+    char response_buffer[30];
+    status = send_cmd_and_get_response("AT+DR=EU868\r\n", response_buffer, sizeof(response_buffer));
+    if (status != OK) {
+        return status;
+    }
+    return check_response(response_buffer, "+DR: EU868");
+}
+
+lora_status set_EU_CH(){
+    lora_status status = ERROR;
+    char response_buffer[30];
+    status = send_cmd_and_get_response("AT+CH=NUM,0-2\r\n", response_buffer, sizeof(response_buffer));
+    if (status != OK) {
+        return status;
+    }
+    return check_response(response_buffer, "+CH=NUM,0-2");
+
+}
+
+lora_status set_OTAA(){
+    lora_status status = ERROR;
+    char response_buffer[30];
+    status = send_cmd_and_get_response("AT+MODE=LWOTAA\r\n", response_buffer, sizeof(response_buffer));
+    if (status != OK) {
+        return status;
+    }
+    return check_response(response_buffer, "+MODE=LWOTAA");
+
+}
+
+lora_status join_request(){
+    lora_status status = ERROR;
+    char response_buffer[100];
+    status = send_cmd_and_get_response("AT+JOIN\r\n", response_buffer, sizeof(response_buffer));
+    if (status != OK) {
+        return status;
+    }
+    printf("%s\n",response_buffer);
+    return check_response(response_buffer, "Rx: +JOIN: Start\n"
+                                           "+JOIN: NORMAL\n"
+                                           "+JOIN: Network joined\n"
+                                           "+JOIN: NetID xxxxxx DevAddr xx:xx:xx:xx\n"
+                                           "+JOIN: Done");
+
+}
+
+lora_status send_hex_string(char * hex_str){
+    lora_status status = ERROR;
+    char command_buffer[250];
+    char response_buffer[50];
+    snprintf(command_buffer, sizeof(command_buffer), "%s%s\r\n", "AT+MSGHEX=", hex_str);
+    status = send_cmd_and_get_response(command_buffer, response_buffer, sizeof(response_buffer));
+    if (status != OK) {
+        return status;
+    }
+    status = lora_e5_read(response_buffer,50);
+
+
+    return status;
 
 }

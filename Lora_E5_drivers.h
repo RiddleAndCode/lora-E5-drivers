@@ -21,6 +21,12 @@ lora_status set_DevEui(char * DevEui);
 lora_status set_AppEui(char * AppEui);
 lora_status set_AppKey(char * AppKey);
 
+lora_status set_EU_DR();
+lora_status set_EU_CH();
+lora_status set_OTAA();
+lora_status join_request();
+lora_status send_hex_string(char * hex_str);
+
 lora_status send_unconfirmed_msg(char * devEUI); //dont forget the /0
 
 
